@@ -1,0 +1,524 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>La mia libreria</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Young+Serif&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=DM+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: una parete con scaffali in noce; i libri stanno in costa e si impacchettano da soli in file.
+   Al passaggio del cursore il libro si solleva e accanto compare la scheda con copertina e descrizione. */
+:root {
+  --wall: #dde4df;
+  --wall-deep: #c9d3cd;
+  --back: #bcc8c1;
+  --ink: #1c2927;
+  --ink-soft: #52625e;
+  --wood: #7b4d2b;
+  --wood-hi: #99673c;
+  --wood-lo: #4e301a;
+  --brass: #a87a2a;
+  --brass-ink: #fffaf0;
+  --card: #f7f5ef;
+  --card-ink: #231f1a;
+  --card-soft: #6b6458;
+  --line: rgba(28, 41, 39, .16);
+
+  --b1: #7d2e32; --b1i: #f3dfd8;
+  --b2: #24405e; --b2i: #dbe6f1;
+  --b3: #c99a2e; --b3i: #2a1f08;
+  --b4: #2f5a43; --b4i: #dcebe0;
+  --b5: #5e3a62; --b5i: #eadcee;
+  --b6: #55636b; --b6i: #e8eef0;
+  --b7: #1f6b6f; --b7i: #d9eeee;
+  --b8: #a8512b; --b8i: #fbe6d8;
+  --b9: #d9d2c0; --b9i: #2b2a25;
+  --b10: #2e2f33; --b10i: #e4e4e0;
+
+  --display: "Young Serif", Georgia, "Times New Roman", serif;
+  --body: "Newsreader", Georgia, "Times New Roman", serif;
+  --mono: "DM Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --wall: #15201f; --wall-deep: #101a19; --back: #0c1413;
+    --ink: #e7eee9; --ink-soft: #94a6a0;
+    --wood: #8a5a35; --wood-hi: #a77348; --wood-lo: #3b2615;
+    --brass: #d1a04a; --brass-ink: #1c1407;
+    --card: #1e2b29; --card-ink: #eef2ee; --card-soft: #a3b3ad;
+    --line: rgba(231, 238, 233, .16);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --wall: #15201f; --wall-deep: #101a19; --back: #0c1413;
+  --ink: #e7eee9; --ink-soft: #94a6a0;
+  --wood: #8a5a35; --wood-hi: #a77348; --wood-lo: #3b2615;
+  --brass: #d1a04a; --brass-ink: #1c1407;
+  --card: #1e2b29; --card-ink: #eef2ee; --card-soft: #a3b3ad;
+  --line: rgba(231, 238, 233, .16);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--wall);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 17px;
+  line-height: 1.5;
+  padding-block: 28px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1120px; margin: 0 auto; }
+
+header { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 20px 32px; margin-bottom: 22px; }
+.title { min-width: 0; }
+h1 { font-family: var(--display); font-weight: 400; font-size: clamp(2rem, 5.5vw, 3.2rem); line-height: 1.05; margin: 0; text-wrap: balance; }
+.meta { font-family: var(--mono); font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); margin: 10px 0 0; }
+.controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; min-width: 0; }
+.controls input, .controls select {
+  font: 15px var(--body); color: var(--ink); background: var(--wall-deep);
+  border: 1px solid var(--line); border-radius: 4px; padding: 8px 12px; min-width: 0;
+}
+.controls input { width: min(240px, 100%); }
+.controls input::placeholder { color: var(--ink-soft); }
+:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 26px; }
+.chip {
+  font: 500 12px var(--mono); letter-spacing: .05em; text-transform: uppercase;
+  color: var(--ink); background: transparent; border: 1px solid var(--line);
+  padding: 6px 12px; border-radius: 3px; cursor: pointer;
+}
+.chip:hover { border-color: var(--brass); }
+.chip[aria-pressed="true"] { background: var(--brass); border-color: var(--brass); color: var(--brass-ink); }
+
+/* mobile: i chip scorrono in orizzontale */
+@media (max-width: 560px) {
+  .chips { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 6px; }
+  .chip { flex: none; }
+}
+
+.case {
+  background: var(--back);
+  padding: 14px 18px 0;
+  border: 10px solid var(--wood);
+  border-image: linear-gradient(90deg, var(--wood-lo), var(--wood-hi) 18%, var(--wood) 50%, var(--wood-hi) 82%, var(--wood-lo)) 1;
+  box-shadow: inset 0 14px 28px rgba(0, 0, 0, .28), 0 18px 40px rgba(0, 0, 0, .18);
+}
+@media (max-width: 560px) { .case { padding: 10px 8px 0; border-width: 7px; } }
+.shelf { position: relative; }
+.row { display: flex; align-items: flex-end; gap: 3px; height: 244px; padding: 0 6px; }
+.plank {
+  height: 22px; margin: 0 -18px;
+  background: linear-gradient(180deg, var(--wood-hi), var(--wood) 35%, var(--wood-lo));
+  box-shadow: 0 8px 14px rgba(0, 0, 0, .35);
+}
+@media (max-width: 560px) { .plank { margin: 0 -8px; } }
+
+.book {
+  --c: var(--b1); --ci: var(--b1i);
+  flex: none; position: relative; border: 0; padding: 0; cursor: pointer;
+  background: var(--c); color: var(--ci);
+  border-radius: 2px 2px 1px 1px;
+  box-shadow: inset 3px 0 4px rgba(255, 255, 255, .14), inset -3px 0 5px rgba(0, 0, 0, .28), 1px 0 1px rgba(0, 0, 0, .3);
+  transition: transform .22s cubic-bezier(.2, .8, .3, 1), opacity .2s, filter .2s;
+  transform-origin: bottom center;
+  display: flex; flex-direction: column; align-items: center; justify-content: space-between;
+  overflow: hidden;
+}
+.book::before, .book::after { content: ""; display: block; width: 100%; height: 5px; flex: none; background: color-mix(in srgb, var(--ci) 55%, transparent); opacity: .5; margin-top: 12px; }
+.book::after { margin-top: 0; margin-bottom: 12px; }
+.book .t {
+  writing-mode: vertical-rl; transform: rotate(180deg);
+  font: 400 14px/1.15 var(--display); letter-spacing: .01em;
+  max-height: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 6px 0;
+}
+.book .a {
+  writing-mode: vertical-rl; transform: rotate(180deg);
+  font: 500 9.5px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; opacity: .78; white-space: nowrap;
+}
+.book.is-on { transform: translateY(-18px); z-index: 3; box-shadow: inset 3px 0 4px rgba(255,255,255,.2), inset -3px 0 5px rgba(0,0,0,.28), 0 10px 14px rgba(0,0,0,.3); }
+.book.is-dim { opacity: .22; filter: saturate(.4); }
+@media (hover: hover) { .book:hover:not(.is-dim) { transform: translateY(-18px); } }
+
+/* scheda del libro */
+.card {
+  position: fixed; z-index: 20; width: min(500px, calc(100vw - 32px));
+  background: var(--card); color: var(--card-ink);
+  border-radius: 6px; padding: 20px;
+  display: grid; grid-template-columns: 138px minmax(0, 1fr); gap: 20px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .38), 0 0 0 1px var(--line);
+  opacity: 0; transform: translateY(6px); transition: opacity .16s, transform .16s; pointer-events: none;
+}
+.card.open { opacity: 1; transform: none; pointer-events: auto; }
+
+.cover {
+  width: 138px; aspect-ratio: 2 / 3; background: var(--c); color: var(--ci);
+  border-radius: 2px 5px 5px 2px; padding: 16px 12px 12px 18px;
+  display: flex; flex-direction: column; justify-content: space-between;
+  box-shadow: 6px 8px 16px rgba(0, 0, 0, .35), inset 6px 0 0 rgba(0, 0, 0, .18), inset 8px 0 6px -4px rgba(255, 255, 255, .25);
+  transform: perspective(600px) rotateY(-9deg); transform-origin: left center;
+}
+.cover .g { font: 500 8.5px var(--mono); letter-spacing: .12em; text-transform: uppercase; opacity: .8; }
+.cover .ct { font: 400 18px/1.12 var(--display); text-wrap: balance; overflow-wrap: anywhere; }
+.cover .ca { font: 400 italic 12px/1.2 var(--body); opacity: .9; }
+
+.info { min-width: 0; }
+.info .tag { font: 500 11px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--card-soft); margin: 0; }
+.info h2 { font: 400 1.4rem/1.15 var(--display); margin: 6px 0 2px; text-wrap: balance; }
+.info .by { margin: 0; color: var(--card-soft); font-style: italic; }
+.facts { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: 12px 0; font: 400 12px var(--mono); color: var(--card-soft); }
+.stars { color: var(--brass); letter-spacing: 2px; font-size: 14px; }
+.desc { margin: 0; font-size: 16px; line-height: 1.5; }
+.status { display: inline-block; margin-top: 12px; font: 500 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; padding: 3px 9px; border-radius: 3px; border: 1px solid var(--line); }
+.status.letto { background: var(--brass); color: var(--brass-ink); border-color: var(--brass); }
+.close { display: none; position: absolute; top: 8px; right: 8px; font: 500 12px var(--mono); background: transparent; color: var(--card-soft); border: 1px solid var(--line); border-radius: 3px; padding: 4px 10px; cursor: pointer; }
+
+/* touch e schermi piccoli: la scheda diventa un pannello in basso */
+.card.sheet {
+  left: 0 !important; right: 0; bottom: 0; top: auto !important; width: 100%; max-height: 82vh; overflow-y: auto;
+  border-radius: 12px 12px 0 0; grid-template-columns: 96px minmax(0, 1fr); gap: 14px;
+  padding: 18px max(16px, env(safe-area-inset-right, 0px)) calc(18px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+  transform: translateY(24px);
+}
+.card.sheet.open { transform: none; }
+.card.sheet .close { display: block; }
+.card.sheet .cover { width: 96px; padding: 12px 8px 8px 12px; }
+.card.sheet .cover .ct { font-size: 13px; }
+.card.sheet .cover .g { font-size: 7px; }
+.card.sheet .cover .ca { font-size: 10px; }
+.card.sheet .info h2 { font-size: 1.2rem; padding-right: 54px; }
+
+.empty { text-align: center; color: var(--ink-soft); padding: 28px 0 8px; font-style: italic; }
+.note { margin-top: 26px; color: var(--ink-soft); font-size: 15px; max-width: 62ch; }
+
+.card .facts, .card .status { display: none; }
+.card .open { display: inline-block; margin-top: 14px; font: 500 12px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--card-ink); text-decoration: none; border-bottom: 1px solid var(--brass); padding-bottom: 2px; }
+.cover.photo > span { display: none; }
+
+/* pagina del libro */
+.detail { max-width: 880px; }
+.back { display: inline-block; font: 500 12px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--brass); padding-bottom: 2px; margin-bottom: 30px; }
+.dgrid { display: grid; grid-template-columns: minmax(0, 260px) minmax(0, 1fr); gap: 44px; align-items: start; }
+.dgrid .cover { width: 100%; max-width: 260px; padding: 28px 22px 22px 32px; }
+.dgrid .cover .ct { font-size: 28px; }
+.dgrid .cover .g { font-size: 11px; }
+.dgrid .cover .ca { font-size: 16px; }
+.dinfo { min-width: 0; }
+.dtag { font: 500 12px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); margin: 0; }
+.dinfo h1 { margin-top: 8px; font-size: clamp(1.9rem, 5vw, 2.8rem); }
+.dby { margin: 6px 0 0; font-size: 1.15rem; font-style: italic; color: var(--ink-soft); }
+.dfacts { display: grid; grid-template-columns: repeat(auto-fit, minmax(104px, 1fr)); gap: 14px 20px; margin: 24px 0; padding: 16px 0; border-block: 1px solid var(--line); }
+.dfacts dt { font: 500 11px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+.dfacts dd { margin: 3px 0 0; font-size: 17px; }
+.ddesc { margin: 0; font-size: 1.1rem; line-height: 1.6; max-width: 60ch; }
+.dnav { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px 24px; margin-top: 48px; padding-top: 18px; border-top: 1px solid var(--line); }
+.dnav a { color: var(--ink); font-style: italic; text-decoration: none; min-width: 0; }
+.dnav a:hover, .back:hover { color: var(--brass); }
+@media (max-width: 640px) { .dgrid { grid-template-columns: minmax(0, 1fr); gap: 28px; } .dgrid .cover { max-width: 190px; } .dgrid .cover .ct { font-size: 22px; } }
+
+@media (prefers-reduced-motion: reduce) { .book, .card { transition: none; } }
+</style>
+
+<div class="wrap" id="home">
+  <header>
+    <div class="title">
+      <h1>La mia libreria</h1>
+      <p class="meta" id="meta"></p>
+    </div>
+    <div class="controls">
+      <input id="q" type="search" placeholder="Cerca titolo o autore" aria-label="Cerca titolo o autore">
+      <select id="sort" aria-label="Ordina i libri">
+        <option value="orig">Come li ho messi</option>
+        <option value="author">Per autore</option>
+        <option value="title">Per titolo</option>
+        <option value="year">Per anno</option>
+      </select>
+    </div>
+  </header>
+
+  <div class="chips" id="chips" role="group" aria-label="Filtra per genere"></div>
+
+  <div class="case" id="case"></div>
+  <p class="empty" id="empty" hidden>Nessun libro corrisponde alla ricerca.</p>
+
+  <p class="note">Passa il cursore su un libro per vedere l'anteprima e clicca per aprire la sua pagina. Da telefono tocca la costa e poi 'Apri la scheda'. I libri qui sopra sono esempi: mandami il tuo elenco e li sostituisco con i tuoi.</p>
+</div>
+
+<div class="wrap detail" id="detail" hidden>
+  <a class="back" href="#">← Torna alla libreria</a>
+  <div class="dgrid">
+    <div class="cover" id="dcv"><span class="g" id="dcg"></span><span class="ct" id="dct"></span><span class="ca" id="dca"></span></div>
+    <div class="dinfo">
+      <p class="dtag" id="dg"></p>
+      <h1 id="dt"></h1>
+      <p class="dby" id="da"></p>
+      <dl class="dfacts">
+        <div><dt>Anno</dt><dd id="dy"></dd></div>
+        <div><dt>Pagine</dt><dd id="dp"></dd></div>
+        <div><dt>Genere</dt><dd id="dge"></dd></div>
+        <div><dt>Voto</dt><dd class="stars" id="dr"></dd></div>
+        <div><dt>Stato</dt><dd id="ds"></dd></div>
+      </dl>
+      <p class="ddesc" id="dd"></p>
+    </div>
+  </div>
+  <nav class="dnav"><a id="dprev" href="#"></a><a id="dnext" href="#"></a></nav>
+</div>
+
+<div class="card" id="card" hidden role="dialog" aria-live="polite">
+  <button class="close" id="close" type="button">Chiudi</button>
+  <div class="cover" id="cv"><span class="g" id="cvg"></span><span class="ct" id="cvt"></span><span class="ca" id="cva"></span></div>
+  <div class="info">
+    <p class="tag" id="ig"></p>
+    <h2 id="it"></h2>
+    <p class="by" id="ia"></p>
+    <div class="facts"><span id="iy"></span><span id="ip"></span><span class="stars" id="ir"></span></div>
+    <p class="desc" id="id"></p>
+    <a class="open" id="io" href="#">Apri la scheda →</a>
+    <span class="status" id="is"></span>
+  </div>
+</div>
+
+<script>
+/* ELENCO DEI LIBRI: modifica solo questa lista.
+   c = colore della costa (1-10), r = voto (1-5), letto = true/false */
+const BOOKS = [
+  { t: "Il nome della rosa", a: "Umberto Eco", y: 1980, p: 520, g: "Giallo", c: 1, r: 5, letto: true,
+    d: "Nel 1327, in un'abbazia benedettina sulle montagne, una serie di morti misteriose tiene in ansia i monaci. Frate Guglielmo da Baskerville indaga con il suo novizio Adso, tra una biblioteca labirintica e dispute teologiche." },
+  { t: "Se questo è un uomo", a: "Primo Levi", y: 1947, p: 190, g: "Memorie", c: 10, r: 5, letto: true,
+    d: "La testimonianza di un chimico torinese deportato ad Auschwitz. Levi racconta la vita quotidiana nel campo con una lucidità misurata che rende il libro ancora più forte." },
+  { t: "Il barone rampante", a: "Italo Calvino", y: 1957, p: 280, g: "Romanzo", c: 4, r: 5, letto: true,
+    d: "A dodici anni Cosimo Piovasco di Rondò sale su un albero per rifiutare un pranzo di famiglia e non scende più. Vivrà tutta la vita tra i rami, osservando il mondo del Settecento da un punto di vista tutto suo." },
+  { t: "Cent'anni di solitudine", a: "Gabriel García Márquez", y: 1967, p: 417, g: "Romanzo", c: 3, r: 5, letto: true,
+    d: "La saga della famiglia Buendía, fondatrice del villaggio di Macondo. Amori, guerre e profezie si ripetono di generazione in generazione, in un realismo magico che confonde storia e leggenda." },
+  { t: "1984", a: "George Orwell", y: 1949, p: 328, g: "Fantascienza", c: 10, r: 4, letto: true,
+    d: "Winston Smith lavora al Ministero della Verità e riscrive il passato per conto del Partito. Quando prova ad avere pensieri e sentimenti suoi, scopre quanto sia pericoloso in un mondo dove il Grande Fratello vede tutto." },
+  { t: "Il piccolo principe", a: "Antoine de Saint-Exupéry", y: 1943, p: 96, g: "Romanzo", c: 7, r: 5, letto: true,
+    d: "Un aviatore, fermo nel deserto per un guasto, incontra un bambino venuto da un asteroide lontano. Dal suo racconto nasce una riflessione semplice su amicizia, responsabilità e sul modo in cui gli adulti guardano le cose." },
+  { t: "Sapiens", a: "Yuval Noah Harari", y: 2011, p: 464, g: "Saggio", c: 8, r: 4, letto: true,
+    d: "Una storia dell'umanità dalla comparsa di Homo sapiens fino a oggi. Harari segue il filo della rivoluzione cognitiva, agricola e scientifica e si chiede che cosa ci abbia resi la specie dominante." },
+  { t: "Norwegian Wood", a: "Haruki Murakami", y: 1987, p: 296, g: "Romanzo", c: 2, r: 4, letto: true,
+    d: "Toru ripensa agli anni dell'università a Tokyo, alla morte dell'amico Kizuki e al legame fragile con Naoko. Intorno a loro si muovono Midori e un'intera generazione in cerca di un posto nel mondo." },
+  { t: "L'amica geniale", a: "Elena Ferrante", y: 2011, p: 331, g: "Romanzo", c: 5, r: 5, letto: true,
+    d: "Napoli, anni Cinquanta: Elena e Lila crescono in un rione povero e si legano con un'amicizia fatta di ammirazione, rivalità e studio. Il primo volume di una storia che attraversa decenni." },
+  { t: "Dune", a: "Frank Herbert", y: 1965, p: 688, g: "Fantascienza", c: 3, r: 5, letto: true,
+    d: "Su Arrakis, pianeta desertico e unica fonte della preziosa spezia, il giovane Paul Atreides si ritrova al centro di intrighi politici e profezie. Un romanzo sull'ecologia, il potere e la religione." },
+  { t: "Il fu Mattia Pascal", a: "Luigi Pirandello", y: 1904, p: 240, g: "Classico", c: 6, r: 4, letto: true,
+    d: "Stanco della sua vita, Mattia Pascal approfitta di una falsa notizia della propria morte per ricominciare con un altro nome. Scoprirà presto che essere nessuno ha un prezzo." },
+  { t: "Orgoglio e pregiudizio", a: "Jane Austen", y: 1813, p: 432, g: "Classico", c: 9, r: 5, letto: true,
+    d: "Elizabeth Bennet ha idee chiare sul matrimonio e sul signor Darcy, ricco e altezzoso. Tra balli, lettere e malintesi, i due devono fare i conti con i propri difetti prima di capirsi." },
+  { t: "Le città invisibili", a: "Italo Calvino", y: 1972, p: 160, g: "Romanzo", c: 7, r: 5, letto: false,
+    d: "Marco Polo descrive a Kublai Khan città che non esistono, una per una, con nomi di donna. Ogni descrizione è un piccolo racconto sulla memoria, il desiderio e il modo in cui immaginiamo i luoghi." },
+  { t: "La coscienza di Zeno", a: "Italo Svevo", y: 1923, p: 400, g: "Classico", c: 8, r: 4, letto: false,
+    d: "Zeno Cosini scrive le sue memorie su consiglio dello psicoanalista, tra tentativi di smettere di fumare, un matrimonio e un'attività commerciale. Ironico e inaffidabile, racconta sé stesso senza mai arrivare a guarire." },
+  { t: "Fahrenheit 451", a: "Ray Bradbury", y: 1953, p: 208, g: "Fantascienza", c: 1, r: 4, letto: false,
+    d: "Guy Montag è un pompiere che brucia i libri invece di spegnere incendi. L'incontro con una vicina curiosa lo spinge a leggerne uno, e a mettere in dubbio la società in cui vive." },
+  { t: "Il deserto dei Tartari", a: "Dino Buzzati", y: 1940, p: 224, g: "Classico", c: 2, r: 5, letto: false,
+    d: "Il giovane ufficiale Giovanni Drogo viene assegnato alla Fortezza Bastiani, ai confini del regno, dove si aspetta da anni un attacco dei nemici. L'attesa lo consuma lentamente." }
+];
+
+BOOKS.forEach(b => { b.s = b.t.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""); });
+function snip(s, n = 130) { return s.length <= n ? s : s.slice(0, n).replace(/\s+\S*$/, "") + "…"; }
+/* se un libro ha il campo img (data URI o file), si usa come copertina */
+function paintCover(el, b) {
+  el.style.backgroundImage = b.img ? `url(${b.img})` : "";
+  el.style.backgroundSize = "cover";
+  el.classList.toggle("photo", !!b.img);
+}
+const $ = id => document.getElementById(id);
+const caseEl = $("case"), card = $("card");
+let filter = "Tutti", query = "", sortBy = "orig", active = null, closeTimer = null;
+const touchMode = () => window.matchMedia("(hover: none), (max-width: 640px)").matches;
+
+function hash(s) { let h = 0; for (const ch of s) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return h; }
+
+/* una costa per ogni libro: spessore dal numero di pagine, altezza variabile */
+const els = BOOKS.map((b, i) => {
+  const el = document.createElement("button");
+  el.type = "button";
+  el.className = "book";
+  const w = Math.max(28, Math.min(54, Math.round(b.p / 11)));
+  const h = 168 + (hash(b.t) % 5) * 13;
+  el.style.width = w + "px";
+  el.style.height = h + "px";
+  el.style.setProperty("--c", `var(--b${b.c})`);
+  el.style.setProperty("--ci", `var(--b${b.c}i)`);
+  el.setAttribute("aria-label", `${b.t}, ${b.a}`);
+  const t = document.createElement("span"); t.className = "t"; t.textContent = b.t;
+  const a = document.createElement("span"); a.className = "a"; a.textContent = b.a.split(" ").slice(-1)[0];
+  el.append(t, a);
+  el.dataset.i = i;
+  el._w = w;
+  return el;
+});
+
+function ordered() {
+  const idx = BOOKS.map((_, i) => i);
+  const key = { author: i => BOOKS[i].a.split(" ").slice(-1)[0], title: i => BOOKS[i].t.replace(/^(il|la|le|lo|l'|i|gli)\s*/i, ""), year: i => BOOKS[i].y };
+  if (sortBy !== "orig") idx.sort((x, y) => {
+    const kx = key[sortBy](x), ky = key[sortBy](y);
+    return typeof kx === "number" ? kx - ky : kx.localeCompare(ky, "it");
+  });
+  return idx;
+}
+
+/* impacchetta le coste in file larghe quanto lo scaffale */
+function layout() {
+  closeCard(true);
+  caseEl.textContent = "";
+  const cs = getComputedStyle(caseEl);
+  const avail = caseEl.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 12;
+  let row = null, used = 0;
+  const newShelf = () => {
+    const s = document.createElement("div"); s.className = "shelf";
+    row = document.createElement("div"); row.className = "row";
+    const pl = document.createElement("div"); pl.className = "plank";
+    s.append(row, pl); caseEl.append(s); used = 0;
+  };
+  newShelf();
+  for (const i of ordered()) {
+    const w = els[i]._w + 3;
+    if (used + w > avail && used > 0) newShelf();
+    row.append(els[i]); used += w;
+  }
+  applyFilter();
+}
+
+function applyFilter() {
+  const q = query.trim().toLowerCase();
+  let shown = 0;
+  els.forEach((el, i) => {
+    const b = BOOKS[i];
+    const ok = (filter === "Tutti" || b.g === filter) && (!q || (b.t + " " + b.a).toLowerCase().includes(q));
+    el.classList.toggle("is-dim", !ok);
+    if (ok) shown++;
+  });
+  $("empty").hidden = shown > 0;
+  const letti = BOOKS.filter(b => b.letto).length;
+  $("meta").textContent = `${BOOKS.length} libri · ${letti} letti · ${BOOKS.length - letti} da leggere`;
+}
+
+function buildChips() {
+  const genres = ["Tutti", ...[...new Set(BOOKS.map(b => b.g))].sort((a, b) => a.localeCompare(b, "it"))];
+  $("chips").textContent = "";
+  genres.forEach(g => {
+    const c = document.createElement("button");
+    c.type = "button"; c.className = "chip"; c.textContent = g;
+    c.setAttribute("aria-pressed", String(g === filter));
+    c.onclick = () => { filter = g; [...$("chips").children].forEach(x => x.setAttribute("aria-pressed", String(x.textContent === g))); applyFilter(); };
+    $("chips").append(c);
+  });
+}
+
+/* scheda */
+function openCard(el) {
+  if (el.classList.contains("is-dim")) return;
+  clearTimeout(closeTimer);
+  if (active && active !== el) active.classList.remove("is-on");
+  active = el; el.classList.add("is-on");
+  const b = BOOKS[+el.dataset.i];
+  card.style.setProperty("--c", `var(--b${b.c})`);
+  card.style.setProperty("--ci", `var(--b${b.c}i)`);
+  $("cvg").textContent = b.g; $("cvt").textContent = b.t; $("cva").textContent = b.a;
+  $("ig").textContent = b.g;
+  $("it").textContent = b.t; $("ia").textContent = b.a;
+  $("iy").textContent = b.y; $("ip").textContent = b.p + " pagine";
+  $("ir").textContent = "★".repeat(b.r) + "☆".repeat(5 - b.r);
+  $("ir").setAttribute("aria-label", `${b.r} stelle su 5`);
+  $("id").textContent = snip(b.d);
+  $("io").href = "#" + b.s;
+  paintCover($("cv"), b);
+  const st = $("is"); st.textContent = b.letto ? "Letto" : "Da leggere"; st.className = "status" + (b.letto ? " letto" : "");
+  card.hidden = false;
+  const sheet = touchMode();
+  card.classList.toggle("sheet", sheet);
+  if (!sheet) {
+    const r = el.getBoundingClientRect(), cw = card.offsetWidth, ch = card.offsetHeight;
+    let x = r.right + 16;
+    if (x + cw > innerWidth - 16) x = r.left - cw - 16;
+    if (x < 16) x = Math.max(16, (innerWidth - cw) / 2);
+    let y = r.top + r.height / 2 - ch / 2;
+    y = Math.max(12, Math.min(y, innerHeight - ch - 12));
+    card.style.left = x + "px"; card.style.top = y + "px";
+  } else { card.style.left = card.style.top = ""; }
+  requestAnimationFrame(() => card.classList.add("open"));
+}
+function closeCard(now) {
+  clearTimeout(closeTimer);
+  const go = () => {
+    if (active) active.classList.remove("is-on");
+    active = null; card.classList.remove("open");
+    setTimeout(() => { if (!active) card.hidden = true; }, 180);
+  };
+  now ? go() : (closeTimer = setTimeout(go, 160));
+}
+
+caseEl.addEventListener("pointerover", e => {
+  if (touchMode()) return;
+  const el = e.target.closest(".book"); if (el) openCard(el);
+});
+caseEl.addEventListener("pointerout", e => {
+  if (touchMode()) return;
+  if (e.target.closest(".book") && !(e.relatedTarget && e.relatedTarget.closest && e.relatedTarget.closest(".book"))) closeCard();
+});
+caseEl.addEventListener("click", e => {
+  const el = e.target.closest(".book"); if (!el) return;
+  if (!touchMode()) { location.hash = BOOKS[+el.dataset.i].s; return; }
+  active === el ? closeCard(true) : openCard(el);
+});
+caseEl.addEventListener("focusin", e => { const el = e.target.closest(".book"); if (el && !touchMode()) openCard(el); });
+card.addEventListener("pointerenter", () => clearTimeout(closeTimer));
+card.addEventListener("pointerleave", () => { if (!touchMode()) closeCard(); });
+$("close").onclick = () => closeCard(true);
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeCard(true); });
+document.addEventListener("click", e => { if (touchMode() && active && !e.target.closest(".book") && !e.target.closest("#card")) closeCard(true); });
+
+$("q").addEventListener("input", e => { query = e.target.value; applyFilter(); });
+$("sort").addEventListener("change", e => { sortBy = e.target.value; layout(); });
+
+let rt; let lastW = 0;
+new ResizeObserver(() => {
+  const w = caseEl.clientWidth;
+  if (w === lastW || w === 0) return; lastW = w;
+  clearTimeout(rt); rt = setTimeout(layout, 120);
+}).observe(caseEl);
+window.addEventListener("scroll", () => { if (!touchMode()) closeCard(true); }, { passive: true });
+
+buildChips();
+layout();
+
+/* pagina del libro: si apre con #titolo-del-libro */
+const home = $("home"), detail = $("detail");
+let homeY = 0;
+function route() {
+  const s = decodeURIComponent(location.hash.slice(1));
+  const i = BOOKS.findIndex(b => b.s === s);
+  closeCard(true);
+  if (i < 0) {
+    if (!detail.hidden) { detail.hidden = true; home.hidden = false; requestAnimationFrame(() => scrollTo(0, homeY)); }
+    return;
+  }
+  if (!home.hidden) homeY = scrollY;
+  const b = BOOKS[i], n = BOOKS.length;
+  detail.style.setProperty("--c", `var(--b${b.c})`);
+  detail.style.setProperty("--ci", `var(--b${b.c}i)`);
+  paintCover($("dcv"), b);
+  $("dcg").textContent = b.g; $("dct").textContent = b.t; $("dca").textContent = b.a;
+  $("dg").textContent = b.g; $("dt").textContent = b.t; $("da").textContent = b.a;
+  $("dy").textContent = b.y; $("dp").textContent = b.p; $("dge").textContent = b.g;
+  $("dr").textContent = "★".repeat(b.r) + "☆".repeat(5 - b.r);
+  $("dr").setAttribute("aria-label", `${b.r} stelle su 5`);
+  $("ds").textContent = b.letto ? "Letto" : "Da leggere";
+  $("dd").textContent = b.d;
+  const pv = BOOKS[(i + n - 1) % n], nx = BOOKS[(i + 1) % n];
+  $("dprev").href = "#" + pv.s; $("dprev").textContent = "← " + pv.t;
+  $("dnext").href = "#" + nx.s; $("dnext").textContent = nx.t + " →";
+  home.hidden = true; detail.hidden = false;
+  scrollTo(0, 0);
+}
+addEventListener("hashchange", route);
+route();
+</script>
+
+</body></html>
